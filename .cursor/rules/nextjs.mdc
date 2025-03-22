@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Next.js
+
+- We are using Next.js 15 app router using create t3 app (https://create.t3.gg/)
+- We are using trpc, nextauth, and tailwindcss
+
+## Backend / TRPC
+
+- All backend requests
+- Most of the TRPC setup is found at src/server/api
+- Routers are defined at src/server/api/routers 
+
+## UI
+
+- We use shadcn/ui components
+- We have a dark and light theme using a next-themes provider
+- Components are placed in src/components under a directory for each set of components
+- All reusable UI components are placed at src/components/ui
+
+## Animation
+
+- Use tailwindcss for simple animations when possible 
+- Use motion (formally framer motion) for animations which fall out of tailwindcss animations.

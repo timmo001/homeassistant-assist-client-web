@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Typescript rules
+
+- Use named functions unless specified or double level (eg. `const a = (e: Event) => (value:string) => {}`)

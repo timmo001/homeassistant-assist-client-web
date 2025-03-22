@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Style rules
+
+- Use typescript only. Config and rules can be found in [tsconfig.json](mdc:tsconfig.json)
+- Always add types where found, do not use any as a type
+- Use [eslint.config.js](mdc:eslint.config.js) for styling rules
+- Use [prettier.config.js](mdc:prettier.config.js) to format code
+- Only use types, not interfaces
+- Instead of using `Type[]`, always use `Array<Type>`
+- For lucide icons, use the `*Icon` variant instead. For example, `<X />` should be `<XIcon />` instead.
+
+## Dependency imports formatting
+
+Imports should be in this order:
+
+### Remote imports:
+
+- react
+- nextjs
+- trpc
+- tanstack react query
+- icons
+
+### Local imports
+
+- ~/lib/**
+- ~/trpc/server/**
+- ~/trpc/react/**
+- ~/server/**
+- ~/hooks/**
+- ~/components/ui/**
+- ~/components/** (non ui)
+
+### Additional import rules
+
+- Add a space between node module and local imports.
+- For type imports, never use `import type { * } ...`. Instead, use `import { type *, ... } ...`
+- Merge type imports with normal imports, types should come first in the import stack. `import { type x, type y, ComponentX } from "abc"`
+- Local imports should not be relative, instead use `~/` to import according to [tsconfig.json](mdc:tsconfig.json)
+- Imports should be alphabetical based on the path unless previously set, but also in order of depth in the codebase. For example, `~/server/api/trpc` comes before `~/server/api/routers/message` and `react-component-x` comes before `react-component-x/extras`.
+- Remove any extra space before the first import. `"use X";\n\nimport...` should be `"use X";\nimport...`. This rule does not apply to the space between node_module and local imports space.

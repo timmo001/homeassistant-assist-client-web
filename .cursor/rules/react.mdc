@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# React rules
+
+- When defining hooks, always add the type. EG `useMemo<Type>(()=>{})`, `useState<boolean>(false)`

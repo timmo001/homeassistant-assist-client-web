@@ -1,25 +1,22 @@
-import Link from "next/link"
-import { Button } from "~/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import Link from "next/link";
+import { ArrowLeftIcon } from "lucide-react";
 
-export default function SettingsPage() {
+import { Button } from "~/components/ui/button";
+import { SettingsForm } from "~/components/settings/form";
+
+export default async function SettingsPage() {
   return (
-    <div className="container max-w-2xl mx-auto p-4">
-      <div className="flex items-center mb-6">
+    <>
+      <header className="mx-auto flex w-full items-center gap-2 pt-6">
         <Link href="/">
-          <Button variant="ghost" size="icon" className="mr-2">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon">
+            <ArrowLeftIcon />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
+      </header>
 
-      <div className="space-y-6">
-        <p className="text-muted-foreground">
-          This is a placeholder settings page. Add your settings functionality here.
-        </p>
-      </div>
-    </div>
-  )
+      <SettingsForm />
+    </>
+  );
 }
-

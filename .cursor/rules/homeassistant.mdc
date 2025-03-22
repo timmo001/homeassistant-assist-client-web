@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Home Assistant
+
+- All home assistant shared code should be placed in src/lib/home-assistant
+- All shared types are found at [types.ts](mdc:src/lib/home-assistant/types.ts)
+- Home assistant assist types are at [types.ts](mdc:src/lib/home-assistant/assist/types.ts)
