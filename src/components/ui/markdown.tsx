@@ -121,7 +121,7 @@ export function Markdown({ children }: { children: string }) {
 
   // After mounting, show the full markdown with syntax highlighting
   return (
-    <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border prose-p:text-gray-700 dark:prose-p:text-gray-300 max-h-full max-w-none pb-2">
+    <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border prose-p:text-gray-700 dark:prose-p:text-gray-300 max-h-full max-w-none">
       <ReactMarkdown
         components={{
           // Process custom callout divs and convert them to Callout components
