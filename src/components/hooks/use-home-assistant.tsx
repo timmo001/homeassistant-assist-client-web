@@ -397,17 +397,10 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
       return;
     }
 
-    const homeAssistantUrl = new URL(settings.homeAssistantUrl);
-
     homeAssistantClient = new HomeAssistant(
       connectedCallback,
       configReceivedCallback,
-      {
-        access_token: settings.homeAssistantAccessToken,
-        host: homeAssistantUrl.hostname,
-        port: parseInt(homeAssistantUrl.port),
-        ssl: homeAssistantUrl.protocol === "https:",
-      },
+      settingsToHomeAssistantSettings(settings),
     );
 
     void homeAssistantClient.connect();
@@ -423,6 +416,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
     isHydrated,
     connectedCallback,
     configReceivedCallback,
+    settings,
   ]);
 
   return {

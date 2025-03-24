@@ -24,12 +24,18 @@ export function settingsToHomeAssistantSettings(
 ): HomeAssistantSettings {
   const homeAssistantUrl = new URL(settings.homeAssistantUrl);
 
-  return {
+  const output: HomeAssistantSettings = {
     access_token: settings.homeAssistantAccessToken,
     host: homeAssistantUrl.hostname,
-    port: parseInt(homeAssistantUrl.port),
+    port: parseInt(homeAssistantUrl.port ?? 443),
     ssl: homeAssistantUrl.protocol === "https:",
   };
+
+  if (!output.port) {
+    output.port = output.ssl ? 443 : 8123;
+  }
+
+  return output;
 }
 
 export function generateHomeAssistantURLFromSettings(
