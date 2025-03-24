@@ -51,7 +51,7 @@ export function Markdown({ children }: { children: string }) {
   // During SSR and initial client render, show a simplified version
   if (!mounted) {
     return (
-      <div className="prose prose-sm dark:prose-invert max-h-full max-w-none">
+      <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border max-h-full max-w-none">
         <div className="font-mono text-sm whitespace-pre-wrap">{children}</div>
       </div>
     );
@@ -59,7 +59,7 @@ export function Markdown({ children }: { children: string }) {
 
   // After mounting, show the full markdown with syntax highlighting
   return (
-    <div className="prose prose-sm dark:prose-invert max-h-full max-w-none">
+    <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border max-h-full max-w-none">
       <ReactMarkdown
         components={{
           code({
@@ -82,10 +82,19 @@ export function Markdown({ children }: { children: string }) {
               </code>
             );
           },
-          h1: ({ children, ...props }) => <H1 {...props}>{children}</H1>,
-          h2: ({ children, ...props }) => <H2 {...props}>{children}</H2>,
+          h1: ({ children, ...props }) => (
+            <H1 withBorder {...props}>
+              {children}
+            </H1>
+          ),
+          h2: ({ children, ...props }) => (
+            <H2 withBorder {...props}>
+              {children}
+            </H2>
+          ),
           h3: ({ children, ...props }) => <H3 {...props}>{children}</H3>,
           h4: ({ children, ...props }) => <H4 {...props}>{children}</H4>,
+          hr: () => <hr className="border-border my-6 border-t" />,
         }}
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSlug, [rehypePrism, { ignoreMissing: true }]]}

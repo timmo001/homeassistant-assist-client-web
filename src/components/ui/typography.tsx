@@ -1,12 +1,15 @@
 import { cn } from "~/lib/utils";
 
-type HeadingProps = React.HTMLAttributes<HTMLHeadingElement>;
+type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> & {
+  withBorder?: boolean;
+};
 
-export function H1({ className, ...props }: HeadingProps) {
+export function H1({ className, withBorder, ...props }: HeadingProps) {
   return (
     <h1
       className={cn(
         "scroll-m-20 text-4xl font-bold tracking-tight lg:text-5xl",
+        withBorder && "border-border border-b pb-2",
         className,
       )}
       {...props}
@@ -14,11 +17,12 @@ export function H1({ className, ...props }: HeadingProps) {
   );
 }
 
-export function H2({ className, ...props }: HeadingProps) {
+export function H2({ className, withBorder, ...props }: HeadingProps) {
   return (
     <h2
       className={cn(
-        "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+        "scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0",
+        withBorder && "border-border border-b pb-2",
         className,
       )}
       {...props}
@@ -26,11 +30,12 @@ export function H2({ className, ...props }: HeadingProps) {
   );
 }
 
-export function H3({ className, ...props }: HeadingProps) {
+export function H3({ className, withBorder, ...props }: HeadingProps) {
   return (
     <h3
       className={cn(
-        "scroll-m-20 text-2xl font-semibold tracking-tight",
+        "mt-4 scroll-m-20 text-2xl font-semibold tracking-tight",
+        withBorder && "border-border border-b pb-2",
         className,
       )}
       {...props}
@@ -38,11 +43,12 @@ export function H3({ className, ...props }: HeadingProps) {
   );
 }
 
-export function H4({ className, ...props }: HeadingProps) {
+export function H4({ className, withBorder, ...props }: HeadingProps) {
   return (
     <h4
       className={cn(
-        "scroll-m-20 text-xl font-semibold tracking-tight",
+        "mt-4 scroll-m-20 text-xl font-semibold tracking-tight",
+        withBorder && "border-border border-b pb-2",
         className,
       )}
       {...props}
