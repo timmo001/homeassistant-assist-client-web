@@ -10,11 +10,15 @@ import {
 export const INITIAL_MESSAGES: Array<Message> = MessagesSchema.parse([
   {
     id: "welcome",
-    content: `👋 Hi there! Welcome to Home Assistant Assist by \`@timmo001\`.
+    content: `#### 👋 Hi there!
+
+Welcome to Home Assistant Assist by \`@timmo001\`.
 
 I'm here to help you interact with your Home Assistant instance using the Assist interface.
 
-> This is a third party tool and is not affiliated with Home Assistant.`,
+> [!NOTE]
+> This is a third party tool and is not affiliated with Home Assistant.
+`,
     sender: "system",
     timestamp: Date.now(),
   },

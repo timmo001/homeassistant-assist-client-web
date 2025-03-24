@@ -55,3 +55,17 @@ export function H4({ className, withBorder, ...props }: HeadingProps) {
     />
   );
 }
+
+type ParagraphProps = React.HTMLAttributes<HTMLParagraphElement>;
+
+export function P({ className, ...props }: ParagraphProps) {
+  return (
+    <p
+      className={cn(
+        "leading-7 last:mb-0 [&:not(:first-child)]:mt-6",
+        className,
+      )}
+      {...props}
+    />
+  );
+}

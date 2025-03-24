@@ -2,11 +2,13 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypePrism from "rehype-prism-plus";
+import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 
 import { CodeBlock } from "~/components/ui/code-block";
-import { H1, H2, H3, H4 } from "~/components/ui/typography";
+import { H1, H2, H3, H4, P } from "~/components/ui/typography";
+import { Callout } from "~/components/ui/callout";
 
 type CodeProps = {
   node?: unknown;
@@ -41,8 +43,68 @@ function safeStringify(value: React.ReactNode): string {
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
+// Process alert syntax before rendering
+function processAlerts(markdown: string): string {
+  // Handle GitHub-style alerts - replace the alert syntax with custom Callout component HTML
+  const githubAlertRegex =
+    />(?: *)\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](.*?)(?:\n(?!>)|\n$|$)/gs;
+  markdown = markdown.replace(
+    githubAlertRegex,
+    (match: string, type: string, content: string) => {
+      const alertType = type.toLowerCase();
+      const calloutType =
+        alertType === "caution"
+          ? "error"
+          : alertType === "tip"
+            ? "success"
+            : alertType === "note" || alertType === "important"
+              ? "info"
+              : "warning";
+
+      // Clean up the content by removing leading ">" characters from each line
+      const cleanContent = content
+        .split("\n")
+        .map((line) => line.replace(/^>\s*/, "").trim())
+        .join("\n");
+
+      // Convert the content to JSX-friendly format for the Callout component
+      // We'll use a custom data attribute to mark this for post-processing
+      return `<div data-callout-type="${calloutType}">${cleanContent}</div>`;
+    },
+  );
+
+  // Handle bracket-style alerts [NOTE], [TIP], etc.
+  const bracketAlertRegex =
+    /^(?:>|\s*>) *\[(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](.*?)$/gm;
+  markdown = markdown.replace(
+    bracketAlertRegex,
+    (match: string, type: string, content: string) => {
+      const alertType = type.toLowerCase();
+      const calloutType =
+        alertType === "caution"
+          ? "error"
+          : alertType === "tip"
+            ? "success"
+            : alertType === "note" || alertType === "important"
+              ? "info"
+              : "warning";
+
+      // Clean up the content by removing any ">" prefix
+      const cleanContent = content.replace(/^>\s*/, "").trim();
+
+      // Convert the content to JSX-friendly format for the Callout component
+      // We'll use a custom data attribute to mark this for post-processing
+      return `<div data-callout-type="${calloutType}">${cleanContent}</div>`;
+    },
+  );
+
+  return markdown;
+}
+
 export function Markdown({ children }: { children: string }) {
   const [mounted, setMounted] = useState(false);
+  // Process the markdown to handle alerts
+  const processedMarkdown = processAlerts(children);
 
   useEffect(() => {
     setMounted(true);
@@ -59,9 +121,28 @@ export function Markdown({ children }: { children: string }) {
 
   // After mounting, show the full markdown with syntax highlighting
   return (
-    <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border max-h-full max-w-none">
+    <div className="prose prose-sm dark:prose-invert prose-hr:my-6 prose-hr:border-t prose-hr:border-border prose-p:text-gray-700 dark:prose-p:text-gray-300 max-h-full max-w-none pb-2">
       <ReactMarkdown
         components={{
+          // Process custom callout divs and convert them to Callout components
+          div: ({
+            children,
+            "data-callout-type": calloutType,
+            ...props
+          }: React.HTMLAttributes<HTMLDivElement> & {
+            "data-callout-type"?: string;
+          }) => {
+            if (calloutType) {
+              return (
+                <Callout
+                  type={calloutType as "info" | "warning" | "success" | "error"}
+                >
+                  {children}
+                </Callout>
+              );
+            }
+            return <div {...props}>{children}</div>;
+          },
           code({
             node: _node,
             inline,
@@ -95,11 +176,24 @@ export function Markdown({ children }: { children: string }) {
           h3: ({ children, ...props }) => <H3 {...props}>{children}</H3>,
           h4: ({ children, ...props }) => <H4 {...props}>{children}</H4>,
           hr: () => <hr className="border-border my-6 border-t" />,
+          p: ({ children, ...props }) => <P {...props}>{children}</P>,
+          blockquote: ({ children, ...props }) => (
+            <blockquote
+              className="border-border bg-muted/50 text-muted-foreground my-4 border-l-4 pl-6 italic"
+              {...props}
+            >
+              {children}
+            </blockquote>
+          ),
         }}
+        rehypePlugins={[
+          rehypeRaw,
+          rehypeSlug,
+          [rehypePrism, { ignoreMissing: true }],
+        ]}
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSlug, [rehypePrism, { ignoreMissing: true }]]}
       >
-        {children}
+        {processedMarkdown}
       </ReactMarkdown>
     </div>
   );
