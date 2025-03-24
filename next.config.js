@@ -8,7 +8,15 @@ import { withVercelToolbar } from "@vercel/toolbar/plugins/next";
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  // Exclude Electron files from Next.js build
+  webpack: (config, { isServer }) => {
+    // Ignore electron-specific files and directories
+    config.externals = [...(config.externals || []), "electron"];
+
+    return config;
+  },
+};
 
 const withToolbar = withVercelToolbar();
 const withSentry = withSentryConfig(config, {

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "dist/electron/main.js",
+  "main": "dist/electron/main.cjs",
   "scripts": {
     "build": "next build",
     "check": "next lint && tsc --noEmit",
@@ -15,9 +15,10 @@
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "electron:dev": "bun run build && tsc -p electron/tsconfig.json && electron .",
-    "electron:build": "bun run build && tsc -p electron/tsconfig.json && electron-builder build --publish never",
-    "electron:package": "electron-builder build --mac --win --linux --publish never"
+    "electron:tsc": "tsc -p electron/tsconfig.json",
+    "electron:dev": "rm -rf dist/electron && bun run electron:tsc && mv dist/electron/main.js dist/electron/main.cjs && electron .",
+    "electron:build": "rm -rf dist/ && bun run build && bun run electron:tsc && mv dist/electron/main.js dist/electron/main.cjs && electron-builder build --publish never",
+    "electron:package": "bun run electron:build && electron-builder build --mac --win --linux --publish never"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
