@@ -7,7 +7,7 @@ import { cn } from "~/lib/utils";
 import { Markdown } from "~/components/ui/markdown";
 import { Button } from "~/components/ui/button";
 import { useMessagesStore } from "~/components/hooks/use-messages";
-
+import { useHomeAssistantPipelinesStore } from "~/components/hooks/use-home-assistant-pipeline";
 function sanitizeData(data: unknown): unknown {
   if (typeof data !== "object" || data === null) return data;
   if (Array.isArray(data)) return data.map(sanitizeData);
@@ -20,7 +20,8 @@ function sanitizeData(data: unknown): unknown {
 }
 
 export function ChatDebug() {
-  const { config, currentPipeline, pipelines } = useHomeAssistant();
+  const { config } = useHomeAssistant();
+  const { currentPipeline, pipelines } = useHomeAssistantPipelinesStore();
   const { messages } = useMessagesStore();
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
