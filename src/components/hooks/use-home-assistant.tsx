@@ -22,6 +22,7 @@ import type {
 } from "~/lib/home-assistant/assist/types";
 import { settingsToHomeAssistantSettings } from "~/lib/home-assistant";
 import { AudioRecorder } from "~/lib/home-assistant/audioRecorder";
+import { useHomeAssistantPipelineStore } from "~/components/hooks/use-home-assistant-pipeline";
 
 type UseHomeAssistantReturn = {
   config: HassConfig | null;
@@ -44,15 +45,14 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
 
   const [config, setConfig] = useState<HassConfig | null>(null);
   const [pipelines, setPipelines] = useState<AssistPipeline[]>([]);
-  const [currentPipeline, setCurrentPipeline] = useState<AssistPipeline | null>(
-    null,
-  );
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
 
   const { settings } = useSettingsStore();
   const { addMessage, removeMessageIfExists, updateMessage } =
     useMessagesStore();
+  const { currentPipeline, setCurrentPipeline } =
+    useHomeAssistantPipelineStore();
 
   const connectedCallback = useCallback(
     (connection: Connection, user: HassUser): void => {
@@ -105,7 +105,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
           },
         );
     },
-    [addMessage, currentPipeline],
+    [addMessage, currentPipeline, setCurrentPipeline],
   );
 
   const reconnect = useCallback((): void => {
