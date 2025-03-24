@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "~/lib/utils";
@@ -21,6 +21,7 @@ const messageClasses: Record<MessageFormatted["sender"], string> = {
 export function ChatMessages() {
   const { messages } = useMessagesStore();
   const { processUserMessage } = useHomeAssistant();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Process user messages
   useEffect(() => {
@@ -36,8 +37,31 @@ export function ChatMessages() {
     [messages],
   );
 
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Immediate scroll
+    scrollToBottom();
+
+    // Delayed scroll after animations complete
+    const timeoutId = setTimeout(scrollToBottom, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [messagesFormatted]);
+
   return (
-    <div className="flex-1 space-y-4 overflow-y-auto p-4">
+    <div
+      ref={messagesContainerRef}
+      className="flex-1 space-y-4 overflow-y-auto p-4"
+    >
       <AnimatePresence>
         {messagesFormatted.map((message) => (
           <motion.div
