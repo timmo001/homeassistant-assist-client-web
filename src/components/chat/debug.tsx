@@ -30,28 +30,29 @@ export function ChatDebug() {
   }, []);
 
   const markdownContent = useMemo<string>(
-    () => `## Home Assistant
-### Config
+    () => `### Home Assistant
+
+#### Config
 
 \`\`\`json
 ${JSON.stringify(sanitizeData(config), null, 2)}
 \`\`\`
 
-### Current Pipeline
+#### Current Pipeline
 
 \`\`\`json
 ${JSON.stringify(sanitizeData(currentPipeline), null, 2)}
 \`\`\`
 
-### Pipelines
+#### Pipelines
 
 \`\`\`json
 ${JSON.stringify(sanitizeData(pipelines), null, 2)}
 \`\`\`
 
-## Chat
+### Chat
 
-### Messages
+#### Messages
 
 \`\`\`json
 ${JSON.stringify(sanitizeData(messages), null, 2)}
