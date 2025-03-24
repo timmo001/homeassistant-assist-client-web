@@ -17,6 +17,20 @@ import {
   type AssistPipeline,
   type AssistPipelineMutableParams,
 } from "~/lib/home-assistant/assist/types";
+import type { Settings } from "~/lib/setting/types";
+
+export function settingsToHomeAssistantSettings(
+  settings: Settings,
+): HomeAssistantSettings {
+  const homeAssistantUrl = new URL(settings.homeAssistantUrl);
+
+  return {
+    access_token: settings.homeAssistantAccessToken,
+    host: homeAssistantUrl.hostname,
+    port: parseInt(homeAssistantUrl.port),
+    ssl: homeAssistantUrl.protocol === "https:",
+  };
+}
 
 export function generateHomeAssistantURLFromSettings(
   settings: HomeAssistantSettings,

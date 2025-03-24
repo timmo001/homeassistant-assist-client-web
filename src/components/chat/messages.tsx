@@ -1,7 +1,6 @@
 "use client";
 import { Fragment, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import ReactMarkdown from "react-markdown";
 
 import { cn } from "~/lib/utils";
 import {
@@ -10,6 +9,8 @@ import {
 } from "~/lib/message/types";
 import { useMessagesStore } from "~/components/hooks/use-messages";
 import { useHomeAssistant } from "~/components/hooks/use-home-assistant";
+import { Markdown } from "~/components/ui/markdown";
+
 const messageClasses: Record<MessageFormatted["sender"], string> = {
   system:
     "bg-secondary text-secondary-foreground rounded-2xl max-w-full w-full",
@@ -58,9 +59,7 @@ export function ChatMessages() {
                 messageClasses[message.sender],
               )}
             >
-              <div className="prose prose-sm dark:prose-invert [&>p]:my-4 first:[&>p]:mt-0 last:[&>p]:mb-0 [&>p:last-child]:mb-0">
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              </div>
+              <Markdown>{message.content}</Markdown>
               {message.actions && (
                 <div className="flex justify-end gap-2">
                   {message.actions.map((action, index) => (

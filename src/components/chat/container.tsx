@@ -2,9 +2,10 @@ import Link from "next/link";
 import { SettingsIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { ChatInput } from "~/components/chat/input";
-import { ChatMessages } from "~/components/chat/messages";
 import { ChatClear } from "~/components/chat/clear";
+import { ChatControls } from "~/components/chat/controls";
+import { ChatMessages } from "~/components/chat/messages";
+import { ChatDebug } from "~/components/chat/debug";
 
 export async function ChatContainer() {
   return (
@@ -22,8 +23,10 @@ export async function ChatContainer() {
       {/* Chat messages */}
       <ChatMessages />
 
-      {/* Input area */}
-      <ChatInput />
+      {/* Chat controls */}
+      <ChatControls />
+
+      <ChatDebug />
     </>
   );
 }

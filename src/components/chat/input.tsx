@@ -10,7 +10,6 @@ import { SendIcon, XIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useMessagesStore } from "~/components/hooks/use-messages";
-import type { Message } from "~/lib/message/types";
 
 export function ChatInput() {
   const { messages, addMessage } = useMessagesStore();
@@ -23,7 +22,7 @@ export function ChatInput() {
     if (inputValue.trim() === "") return;
 
     addMessage({
-      id: "user",
+      id: `user-${Date.now()}`,
       content: inputValue,
       sender: "user",
       timestamp: Date.now(),
@@ -68,44 +67,42 @@ export function ChatInput() {
   }, [messages]);
 
   return (
-    <div className="py-4">
-      <form onSubmit={handleSubmit} className="flex items-end space-x-2">
-        <div className="relative flex-1">
-          <textarea
-            ref={textareaRef}
-            className="focus:ring-primary max-h-[150px] min-h-[40px] w-full resize-none rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-            placeholder="Type a message... (Shift+Enter for new line)"
-            disabled={lastMessageWasSystem}
-            style={{ overflow: "hidden" }}
-            rows={1}
-            value={inputValue}
-            onChange={handleTextareaChange}
-            onKeyDown={handleKeyDown}
-          />
-          <div className="absolute right-2 bottom-2.5 flex items-center justify-center space-x-1">
-            {inputValue && (
-              <Button
-                className="h-8 w-8"
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={clearInput}
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            )}
+    <form onSubmit={handleSubmit} className="flex items-end space-x-2">
+      <div className="relative flex-1">
+        <textarea
+          ref={textareaRef}
+          className="focus:ring-primary max-h-40 min-h-10 w-full resize-none rounded-md border-0 px-3 py-2 focus:ring-2 focus:outline-none"
+          placeholder="Type your message here..."
+          disabled={lastMessageWasSystem}
+          style={{ overflow: "hidden" }}
+          rows={1}
+          value={inputValue}
+          onChange={handleTextareaChange}
+          onKeyDown={handleKeyDown}
+        />
+        <div className="absolute right-2 bottom-2.5 flex items-center justify-center space-x-1">
+          {inputValue && (
             <Button
               className="h-8 w-8"
-              disabled={!inputValue.trim()}
-              type="submit"
-              size="icon"
+              type="button"
               variant="ghost"
+              size="icon"
+              onClick={clearInput}
             >
-              <SendIcon className="h-4 w-4" />
+              <XIcon className="h-4 w-4" />
             </Button>
-          </div>
+          )}
+          <Button
+            className="h-8 w-8"
+            disabled={!inputValue.trim()}
+            type="submit"
+            size="icon"
+            variant="ghost"
+          >
+            <SendIcon className="h-4 w-4" />
+          </Button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

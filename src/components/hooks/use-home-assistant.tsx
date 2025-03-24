@@ -16,22 +16,21 @@ import type {
   HassConfig,
   HassUser,
 } from "home-assistant-js-websocket";
-import type { Settings } from "~/lib/setting/types";
 import type {
   AssistPipeline,
   PipelineRunEvent,
 } from "~/lib/home-assistant/assist/types";
-import type { HomeAssistantSettings } from "~/lib/home-assistant/types";
+import { settingsToHomeAssistantSettings } from "~/lib/home-assistant";
 import { AudioRecorder } from "~/lib/home-assistant/audioRecorder";
 
 type UseHomeAssistantReturn = {
   config: HassConfig | null;
-  settings: Settings;
   pipelines: AssistPipeline[];
   currentPipeline: AssistPipeline | null;
   reconnect: () => void;
   toggleListening: () => void;
   processUserMessage: (message: string) => Promise<void>;
+  setCurrentPipeline: (pipeline: AssistPipeline) => void;
 };
 
 let homeAssistantClient: HomeAssistant;
@@ -39,19 +38,6 @@ let audio: HTMLAudioElement | undefined;
 let audioBuffer: Int16Array[] | undefined;
 let audioRecorder: AudioRecorder | undefined;
 let sttBinaryHandlerId: number | null;
-
-function settingsToHomeAssistantSettings(
-  settings: Settings,
-): HomeAssistantSettings {
-  const homeAssistantUrl = new URL(settings.homeAssistantUrl);
-
-  return {
-    access_token: settings.homeAssistantAccessToken,
-    host: homeAssistantUrl.hostname,
-    port: parseInt(homeAssistantUrl.port),
-    ssl: homeAssistantUrl.protocol === "https:",
-  };
-}
 
 export function useHomeAssistant(): UseHomeAssistantReturn {
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
@@ -77,8 +63,8 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
 
       // Add a hello message
       addMessage({
-        id: "ha-hello",
-        content: `Hello ${user.name}! How can I assist?`,
+        id: "ha-greeting",
+        content: `Hi ${user.name}! How can I assist?`,
         sender: "server",
         timestamp: Date.now(),
       });
@@ -91,6 +77,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
       console.log("Config received from Home Assistant", config);
       setConfig(config);
 
+      // Get pipelines
       void homeAssistantClient
         .listAssistPipelines()
         ?.then(
@@ -98,17 +85,27 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
             pipelines: AssistPipeline[];
             preferred_pipeline: string | null;
           }) => {
-            console.log("Got pipelines:", JSON.stringify({ pipelines }));
+            console.log("Got pipelines:", pipelines);
             setPipelines(pipelines.pipelines);
-            setCurrentPipeline(
-              pipelines.pipelines.find(
+            if (!currentPipeline) {
+              const preferredPipeline = pipelines.pipelines.find(
                 (pipeline) => pipeline.id === pipelines.preferred_pipeline,
-              ) ?? null,
-            );
+              );
+              if (preferredPipeline) {
+                console.log("Setting preferred pipeline:", preferredPipeline);
+                setCurrentPipeline(preferredPipeline);
+                addMessage({
+                  id: `ha-pipeline-change-${Date.now()}`,
+                  content: `Pipeline set to ${preferredPipeline.name}`,
+                  sender: "system",
+                  timestamp: Date.now(),
+                });
+              } else console.error("No preferred pipeline found");
+            }
           },
         );
     },
-    [setConfig],
+    [addMessage, currentPipeline],
   );
 
   const reconnect = useCallback((): void => {
@@ -129,7 +126,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
   }
 
   function audioError(): void {
-    console.error("Audio error:", JSON.stringify({ audio }));
+    console.error("Audio error:", audio);
     unloadAudio();
   }
 
@@ -159,14 +156,16 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
       timestamp: Date.now(),
     });
 
+    if (!currentPipeline) throw new Error("No pipeline selected");
+
     // To make sure the answer is placed at the right user text, we add it before we process it
     try {
       const unsub = await homeAssistantClient.runAssistPipeline(
         {
           start_stage: "stt",
-          end_stage: currentPipeline?.tts_engine ? "tts" : "intent",
+          end_stage: currentPipeline.tts_engine ? "tts" : "intent",
           input: { sample_rate: audioRecorder.sampleRate! },
-          pipeline: currentPipeline?.id,
+          pipeline: currentPipeline.id,
           conversation_id: conversationId,
         },
         (event) => {
@@ -255,7 +254,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
         },
       );
     } catch (error) {
-      console.error("Error starting pipeline:", JSON.stringify({ error }));
+      console.error("Error starting pipeline:", error);
       void stopListening();
     }
   }
@@ -322,7 +321,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
         conversation_id: conversationId,
       },
       (event: PipelineRunEvent) => {
-        console.log("Got pipeline event:", JSON.stringify({ event }));
+        console.log("Got pipeline event:", event);
         if (event.type === "intent-end") {
           setConversationId(event.data.intent_output.conversation_id);
           const plain = event.data.intent_output.response.speech?.plain;
@@ -379,7 +378,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
       !settings.homeAssistantUrl?.length ||
       !settings.homeAssistantAccessToken?.length
     ) {
-      removeMessageIfExists("ha-hello");
+      removeMessageIfExists("ha-greeting");
       addMessage({
         id: "ha-auth-required",
         content: "Please enter a Home Assistant URL and access token",
@@ -428,11 +427,11 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
 
   return {
     config,
-    settings,
     pipelines,
     currentPipeline,
     reconnect,
     toggleListening,
     processUserMessage,
+    setCurrentPipeline,
   };
 }
