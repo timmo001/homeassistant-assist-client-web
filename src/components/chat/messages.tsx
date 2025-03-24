@@ -1,6 +1,7 @@
 "use client";
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowDownIcon } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import {
@@ -10,6 +11,7 @@ import {
 import { useMessagesStore } from "~/components/hooks/use-messages";
 import { useHomeAssistant } from "~/components/hooks/use-home-assistant";
 import { Markdown } from "~/components/ui/markdown";
+import { Button } from "~/components/ui/button";
 
 const messageClasses: Record<MessageFormatted["sender"], string> = {
   system:
@@ -22,6 +24,11 @@ export function ChatMessages() {
   const { messages } = useMessagesStore();
   const { processUserMessage } = useHomeAssistant();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+
+  // Track if we need to auto-scroll after messages update
+  const shouldScrollRef = useRef(true);
 
   // Process user messages
   useEffect(() => {
@@ -37,66 +44,135 @@ export function ChatMessages() {
     [messages],
   );
 
-  // Auto-scroll to bottom when messages change
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+  // Check if scrolled to bottom
+  const checkScrollPosition = () => {
+    if (messagesContainerRef.current && !isAutoScrolling) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        messagesContainerRef.current;
+      const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 20;
+      setIsAtBottom(atBottom);
+
+      // Update the ref when we check manually
+      shouldScrollRef.current = atBottom;
     }
   };
 
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      setIsAutoScrolling(true);
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+
+      // Reset auto-scrolling flag after animation and update bottom state
+      setTimeout(() => {
+        setIsAutoScrolling(false);
+        checkScrollPosition();
+      }, 100);
+    }
+  };
+
+  // Auto-scroll when messages change if we're at the bottom
   useEffect(() => {
-    // Immediate scroll
+    if (shouldScrollRef.current) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  // Handle button click for scrolling
+  const handleScrollButtonClick = () => {
+    shouldScrollRef.current = true;
     scrollToBottom();
+  };
 
-    // Delayed scroll after animations complete
-    const timeoutId = setTimeout(scrollToBottom, 300);
+  // Add scroll event listener
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      // Initial check and set initial scroll position
+      setTimeout(() => {
+        checkScrollPosition();
+        if (shouldScrollRef.current) {
+          scrollToBottom();
+        }
+      }, 0);
 
-    return () => clearTimeout(timeoutId);
-  }, [messagesFormatted]);
+      const handleScroll = () => {
+        checkScrollPosition();
+      };
+
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
 
   return (
-    <div
-      ref={messagesContainerRef}
-      className="flex-1 space-y-4 overflow-y-auto p-4"
-    >
+    <div className="relative flex-1 overflow-hidden">
+      <div
+        ref={messagesContainerRef}
+        className="absolute inset-0 overflow-y-auto"
+      >
+        <div className="flex min-h-full flex-col justify-end">
+          <div className="space-y-4 p-4">
+            <AnimatePresence>
+              {messagesFormatted.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={cn(
+                    "flex",
+                    message.sender === "system" &&
+                      "border-border w-full max-w-full border-b-2 border-dashed pb-4",
+                    message.sender === "user" ? "justify-end" : "justify-start",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex max-w-[80%] flex-col gap-1 rounded-2xl p-3",
+                      messageClasses[message.sender],
+                    )}
+                  >
+                    <Markdown>{message.content}</Markdown>
+                    {message.actions && (
+                      <div className="flex justify-end gap-2">
+                        {message.actions.map((action, index) => (
+                          <Fragment key={index}>{action}</Fragment>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs opacity-70" suppressHydrationWarning>
+                      {message.timestampFormatted}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll to bottom button */}
       <AnimatePresence>
-        {messagesFormatted.map((message) => (
+        {!isAtBottom && (
           <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={cn(
-              "flex",
-              message.sender === "system" &&
-                "border-border w-full max-w-full border-b-2 border-dashed pb-4",
-              message.sender === "user" ? "justify-end" : "justify-start",
-            )}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-28 left-1/2 z-10 -translate-x-1/2"
           >
-            <div
-              className={cn(
-                "flex max-w-[80%] flex-col gap-1 rounded-2xl p-3",
-                messageClasses[message.sender],
-              )}
+            <Button
+              className="flex items-center gap-2 rounded-full shadow-md"
+              aria-label="Scroll to bottom"
+              onClick={handleScrollButtonClick}
             >
-              <Markdown>{message.content}</Markdown>
-              {message.actions && (
-                <div className="flex justify-end gap-2">
-                  {message.actions.map((action, index) => (
-                    <Fragment key={index}>{action}</Fragment>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs opacity-70" suppressHydrationWarning>
-                {message.timestampFormatted}
-              </p>
-            </div>
+              <ArrowDownIcon className="h-4 w-4" />
+              <span>New messages</span>
+            </Button>
           </motion.div>
-        ))}
+        )}
       </AnimatePresence>
     </div>
   );
