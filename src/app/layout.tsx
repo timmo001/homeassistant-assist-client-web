@@ -2,10 +2,10 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
+import { VercelToolbar } from "@vercel/toolbar/next";
 
 import { Toaster } from "~/components/ui/sonner";
 import { ThemeProvider } from "~/components/theme-provider";
-// import { QueryProvider } from "~/components/providers/query";
 
 export const metadata: Metadata = {
   title: "Home Assistant Assist",
@@ -21,23 +21,25 @@ const geist = Geist({
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const shouldInjectToolbar = process.env.NODE_ENV === "development";
+
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body>
-        {/* <QueryProvider> */}
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <main className="mx-auto flex h-screen w-full max-w-3xl flex-col">
-              {children}
-            </main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className="mx-auto flex h-screen w-full max-w-3xl flex-col">
+            {children}
+          </main>
 
-            <Toaster />
-          </ThemeProvider>
-        {/* </QueryProvider> */}
+          <Toaster />
+
+          {shouldInjectToolbar && <VercelToolbar />}
+        </ThemeProvider>
       </body>
     </html>
   );

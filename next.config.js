@@ -3,13 +3,15 @@
  * for Docker builds.
  */
 import { withSentryConfig } from "@sentry/nextjs";
+import { withVercelToolbar } from "@vercel/toolbar/plugins/next";
 
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {};
 
-export default withSentryConfig(config, {
+const withToolbar = withVercelToolbar();
+const withSentry = withSentryConfig(config, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -40,3 +42,5 @@ export default withSentryConfig(config, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
+
+export default withToolbar(withSentry);

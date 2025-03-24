@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { BugIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useHomeAssistant } from "~/components/hooks/use-home-assistant";
+import { isVercelToolbarMounted } from "@vercel/toolbar";
 
 import { cn } from "~/lib/utils";
 import { Markdown } from "~/components/ui/markdown";
 import { Button } from "~/components/ui/button";
 import { useMessagesStore } from "~/components/hooks/use-messages";
+import { useHomeAssistant } from "~/components/hooks/use-home-assistant";
 import { useHomeAssistantPipelinesStore } from "~/components/hooks/use-home-assistant-pipeline";
 function sanitizeData(data: unknown): unknown {
   if (typeof data !== "object" || data === null) return data;
@@ -25,9 +26,11 @@ export function ChatDebug() {
   const { messages } = useMessagesStore();
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isToolbarPresent, setIsToolbarPresent] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsToolbarPresent(isVercelToolbarMounted());
   }, []);
 
   const markdownContent = useMemo<string>(
@@ -61,7 +64,10 @@ ${JSON.stringify(sanitizeData(messages), null, 2)}
     [config, currentPipeline, pipelines, messages],
   );
 
-  if (!mounted || process.env.NODE_ENV === "production") {
+  if (
+    !mounted ||
+    (process.env.NODE_ENV === "production" && !isToolbarPresent)
+  ) {
     return null;
   }
 
