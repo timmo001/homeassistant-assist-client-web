@@ -5,7 +5,7 @@ import { type Settings, SettingsSchema } from "~/lib/setting/types";
 
 export const INITIAL_SETTINGS = SettingsSchema.parse({
   theme: "system",
-  homeAssistantUrl: "http://homeassistant.local:8123",
+  homeAssistantUrl: "",
   homeAssistantAccessToken: "",
 });
 
