@@ -1,37 +1,34 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import {
+  type Connection,
+  type HassConfig,
+  type HassUser,
+} from "home-assistant-js-websocket";
 
+import {
+  generateHomeAssistantURLFromSettings,
+  HomeAssistant,
+} from "~/lib/home-assistant";
+import { settingsToHomeAssistantSettings } from "~/lib/home-assistant";
+import type {
+  AssistPipeline,
+  PipelineRunEvent,
+} from "~/lib/home-assistant/assist/types";
+import { AudioRecorder } from "~/lib/home-assistant/audioRecorder";
 import { useSettingsStore } from "~/components/hooks/use-settings";
 import {
   rehydrateMessages,
   useMessagesStore,
 } from "~/components/hooks/use-messages";
-import {
-  generateHomeAssistantURLFromSettings,
-  HomeAssistant,
-} from "~/lib/home-assistant";
+import { useHomeAssistantPipelinesStore } from "~/components/hooks/use-home-assistant-pipeline";
 import { SettingsForm } from "~/components/settings/form";
-import type {
-  Connection,
-  HassConfig,
-  HassUser,
-} from "home-assistant-js-websocket";
-import type {
-  AssistPipeline,
-  PipelineRunEvent,
-} from "~/lib/home-assistant/assist/types";
-import { settingsToHomeAssistantSettings } from "~/lib/home-assistant";
-import { AudioRecorder } from "~/lib/home-assistant/audioRecorder";
-import { useHomeAssistantPipelineStore } from "~/components/hooks/use-home-assistant-pipeline";
 
 type UseHomeAssistantReturn = {
   config: HassConfig | null;
-  pipelines: AssistPipeline[];
-  currentPipeline: AssistPipeline | null;
   reconnect: () => void;
   toggleListening: () => void;
   processUserMessage: (message: string) => Promise<void>;
-  setCurrentPipeline: (pipeline: AssistPipeline) => void;
 };
 
 let homeAssistantClient: HomeAssistant;
@@ -42,17 +39,15 @@ let sttBinaryHandlerId: number | null;
 
 export function useHomeAssistant(): UseHomeAssistantReturn {
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
-
   const [config, setConfig] = useState<HassConfig | null>(null);
-  const [pipelines, setPipelines] = useState<AssistPipeline[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
 
   const { settings } = useSettingsStore();
   const { addMessage, removeMessageIfExists, updateMessage } =
     useMessagesStore();
-  const { currentPipeline, setCurrentPipeline } =
-    useHomeAssistantPipelineStore();
+  const { currentPipeline, setCurrentPipeline, setPipelines } =
+    useHomeAssistantPipelinesStore();
 
   const connectedCallback = useCallback(
     (connection: Connection, user: HassUser): void => {
@@ -81,15 +76,15 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
       void homeAssistantClient
         .listAssistPipelines()
         ?.then(
-          (pipelines: {
+          (pipelinesData: {
             pipelines: AssistPipeline[];
             preferred_pipeline: string | null;
           }) => {
-            console.log("Got pipelines:", pipelines);
-            setPipelines(pipelines.pipelines);
+            console.log("Got pipelines:", pipelinesData);
+            setPipelines(pipelinesData.pipelines);
             if (!currentPipeline) {
-              const preferredPipeline = pipelines.pipelines.find(
-                (pipeline) => pipeline.id === pipelines.preferred_pipeline,
+              const preferredPipeline = pipelinesData.pipelines.find(
+                (pipeline) => pipeline.id === pipelinesData.preferred_pipeline,
               );
               if (preferredPipeline) {
                 console.log("Setting preferred pipeline:", preferredPipeline);
@@ -105,7 +100,7 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
           },
         );
     },
-    [addMessage, currentPipeline, setCurrentPipeline],
+    [addMessage, currentPipeline, setCurrentPipeline, setPipelines],
   );
 
   const reconnect = useCallback((): void => {
@@ -421,11 +416,8 @@ export function useHomeAssistant(): UseHomeAssistantReturn {
 
   return {
     config,
-    pipelines,
-    currentPipeline,
     reconnect,
     toggleListening,
     processUserMessage,
-    setCurrentPipeline,
   };
 }

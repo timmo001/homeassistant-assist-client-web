@@ -2,6 +2,10 @@
 import { toast } from "sonner";
 
 import {
+  generateHomeAssistantURLFromSettings,
+  settingsToHomeAssistantSettings,
+} from "~/lib/home-assistant";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -9,16 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { useHomeAssistant } from "~/components/hooks/use-home-assistant";
 import { useMessagesStore } from "~/components/hooks/use-messages";
 import { useSettingsStore } from "~/components/hooks/use-settings";
-import {
-  generateHomeAssistantURLFromSettings,
-  settingsToHomeAssistantSettings,
-} from "~/lib/home-assistant";
+import { useHomeAssistantPipelinesStore } from "~/components/hooks/use-home-assistant-pipeline";
 
 export function ChatPipelines() {
-  const { currentPipeline, pipelines, setCurrentPipeline } = useHomeAssistant();
+  const { currentPipeline, pipelines, setCurrentPipeline } =
+    useHomeAssistantPipelinesStore();
   const { addMessage } = useMessagesStore();
   const { settings } = useSettingsStore();
 
