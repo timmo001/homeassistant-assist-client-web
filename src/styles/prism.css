@@ -1,0 +1,73 @@
+/* Light theme */
+:root {
+  --prism-bg: oklch(0.98 0.01 260);
+  --prism-fg: oklch(0.25 0.02 260);
+  --prism-comment: oklch(0.45 0.02 260);
+  --prism-keyword: oklch(0.35 0.15 260);
+  --prism-string: oklch(0.45 0.15 180);
+  --prism-number: oklch(0.55 0.15 120);
+  --prism-function: oklch(0.65 0.15 60);
+  --prism-operator: oklch(0.75 0.15 0);
+}
+
+/* Dark theme */
+.dark {
+  --prism-bg: oklch(0.2 0.02 260);
+  --prism-fg: oklch(0.95 0.01 260);
+  --prism-comment: oklch(0.7 0.02 260);
+  --prism-keyword: oklch(0.65 0.15 260);
+  --prism-string: oklch(0.75 0.15 180);
+  --prism-number: oklch(0.85 0.15 120);
+  --prism-function: oklch(0.95 0.15 60);
+  --prism-operator: oklch(0.95 0.15 0);
+}
+
+/* Prism theme */
+pre[class*="language-"] {
+  background: var(--prism-bg);
+  color: var(--prism-fg);
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--prism-comment);
+}
+
+.token.punctuation {
+  color: var(--prism-fg);
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: var(--prism-number);
+}
+
+.token.selector,
+.token.string,
+.token.char,
+.token.builtin {
+  color: var(--prism-string);
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: var(--prism-operator);
+}
+
+.token.keyword {
+  color: var(--prism-keyword);
+}
+
+.token.function {
+  color: var(--prism-function);
+}
