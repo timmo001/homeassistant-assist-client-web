@@ -38,8 +38,8 @@ let audioRecorder: AudioRecorder | undefined;
 let sttBinaryHandlerId: number | null;
 
 export function useHomeAssistant(): UseHomeAssistantReturn {
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const [config, setConfig] = useState<HassConfig | null>(null);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
 
