@@ -25,6 +25,7 @@
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-query-devtools": "^5.69.0",
     "@vercel/toolbar": "^0.1.35",
+    "babel-plugin-react-compiler": "^19.0.0-beta-aeaed83-20250323",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.5.0",

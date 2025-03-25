@@ -8,7 +8,11 @@ import { withVercelToolbar } from "@vercel/toolbar/plugins/next";
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  experimental: {
+    reactCompiler: true,
+  },
+};
 
 const withToolbar = withVercelToolbar();
 const withSentry = withSentryConfig(config, {
