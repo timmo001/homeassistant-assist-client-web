@@ -167,33 +167,6 @@ type PipelineSTTEndEvent = PipelineEventBase & {
   };
 };
 
-type ConversationChatLogAssistantDelta = {
-  role: "assistant";
-  content: string;
-  tool_calls: Array<{
-    id: string;
-    tool_name: string;
-    tool_args: Record<string, unknown>;
-  }>;
-};
-
-type ConversationChatLogToolResultDelta = {
-  role: "tool_result";
-  agent_id: string;
-  tool_call_id: string;
-  tool_name: string;
-  tool_result: unknown;
-};
-
-type PipelineIntentProgressEvent = PipelineEventBase & {
-  type: "intent-progress";
-  data: {
-    chat_log_delta:
-      | Partial<ConversationChatLogAssistantDelta>
-      | ConversationChatLogToolResultDelta;
-  };
-};
-
 type PipelineIntentStartEvent = PipelineEventBase & {
   type: "intent-start";
   data: {
@@ -236,7 +209,6 @@ export type PipelineRunEvent =
   | PipelineSTTStartEvent
   | PipelineSTTEndEvent
   | PipelineIntentStartEvent
-  | PipelineIntentProgressEvent
   | PipelineIntentEndEvent
   | PipelineTTSStartEvent
   | PipelineTTSEndEvent;
