@@ -31,14 +31,16 @@ import {
 import { useHomeAssistantPipelinesStore } from "~/components/hooks/use-home-assistant-pipeline";
 import { SettingsForm } from "~/components/settings/form";
 
-type HomeAssistantContextType = {
+export type HomeAssistantContextType = {
   config: HassConfig | null;
   reconnect: () => void;
   toggleListening: () => void;
   processUserMessage: (message: string) => Promise<void>;
 };
 
-const HomeAssistantContext = createContext<HomeAssistantContextType | null>(null);
+export const HomeAssistantContext = createContext<HomeAssistantContextType | null>(
+  null,
+);
 
 let homeAssistantClient: HomeAssistant;
 let audio: HTMLAudioElement | undefined;
@@ -210,18 +212,39 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
             }
           }
 
+          if (event.type === "intent-progress") {
+            const delta = event.data.chat_log_delta;
+            if ("content" in delta && delta.content && lastMessageId) {
+              updateMessage(lastMessageId, {
+                id: lastMessageId,
+                content: delta.content,
+                sender: "server",
+                timestamp: Date.now(),
+              });
+            }
+          }
+
           if (event.type === "intent-end") {
             setConversationId(event.data.intent_output.conversation_id);
             const plain = event.data.intent_output.response.speech?.plain;
             if (plain) {
-              const messageId = `ha-response-message-${Date.now()}`;
-              setLastMessageId(messageId);
-              addMessage({
-                id: messageId,
-                content: plain.speech,
-                sender: "server",
-                timestamp: Date.now(),
-              });
+              if (lastMessageId) {
+                updateMessage(lastMessageId, {
+                  id: lastMessageId,
+                  content: plain.speech,
+                  sender: "server",
+                  timestamp: Date.now(),
+                });
+              } else {
+                const messageId = `ha-response-message-${Date.now()}`;
+                setLastMessageId(messageId);
+                addMessage({
+                  id: messageId,
+                  content: plain.speech,
+                  sender: "server",
+                  timestamp: Date.now(),
+                });
+              }
             }
           }
 
@@ -330,16 +353,36 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
           setConversationId(event.data.intent_output.conversation_id);
           const plain = event.data.intent_output.response.speech?.plain;
           if (plain) {
-            const messageId = `ha-response-message-${Date.now()}`;
-            setLastMessageId(messageId);
-            addMessage({
-              id: messageId,
-              content: plain.speech,
+            if (lastMessageId) {
+              updateMessage(lastMessageId, {
+                id: lastMessageId,
+                content: plain.speech,
+                sender: "server",
+                timestamp: Date.now(),
+              });
+            } else {
+              const messageId = `ha-response-message-${Date.now()}`;
+              setLastMessageId(messageId);
+              addMessage({
+                id: messageId,
+                content: plain.speech,
+                sender: "server",
+                timestamp: Date.now(),
+              });
+            }
+          }
+          if (unsub) void unsub();
+        }
+        if (event.type === "intent-progress") {
+          const delta = event.data.chat_log_delta;
+          if ("content" in delta && delta.content && lastMessageId) {
+            updateMessage(lastMessageId, {
+              id: lastMessageId,
+              content: delta.content,
               sender: "server",
               timestamp: Date.now(),
             });
           }
-          if (unsub) void unsub();
         }
         if (event.type === "error") {
           addMessage({
@@ -437,10 +480,4 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useHomeAssistant(): HomeAssistantContextType {
-  const context = useContext(HomeAssistantContext);
-  if (!context) {
-    throw new Error("useHomeAssistant must be used within a HomeAssistantProvider");
-  }
-  return context;
-} 
+

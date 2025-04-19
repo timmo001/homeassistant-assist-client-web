@@ -5,8 +5,8 @@ import { Geist } from "next/font/google";
 import { VercelToolbar } from "@vercel/toolbar/next";
 
 import { Toaster } from "~/components/ui/sonner";
-import { ThemeProvider } from "~/components/theme-provider";
-import { HomeAssistantProvider } from "~/components/hooks/use-home-assistant";
+import { ThemeProvider } from "~/components/providers/theme-provider";
+import { HomeAssistantProvider } from "~/components/providers/home-assistant-provider";
 
 export const metadata: Metadata = {
   title: "Home Assistant Assist",
