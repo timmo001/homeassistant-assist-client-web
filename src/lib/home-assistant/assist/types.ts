@@ -44,6 +44,7 @@ type IntentResultError = IntentResultBase & {
 
 export type ConversationResult = {
   conversation_id: string | null;
+  continue_conversation: boolean;
   response:
     | IntentResultActionDone
     | IntentResultQueryAnswer

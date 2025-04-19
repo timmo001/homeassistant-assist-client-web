@@ -51,6 +51,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<HassConfig | null>(null);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [continueConversation, setContinueConversation] = useState<boolean>(false);
 
   const { settings } = useSettingsStore();
   const { addMessage, removeMessageIfExists, updateMessage } =
@@ -235,6 +236,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
             }
             case "intent-end": {
               setConversationId(event.data.intent_output.conversation_id);
+              setContinueConversation(event.data.intent_output.continue_conversation);
               const plain = event.data.intent_output.response.speech?.plain;
               if (plain?.speech) {
                 updateMessage({
@@ -253,7 +255,12 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
               audio = new Audio(url);
               console.log("Playing audio:", url);
               void audio.play();
-              audio.addEventListener("ended", unloadAudio);
+              audio.addEventListener("ended", () => {
+                unloadAudio();
+                if (continueConversation) {
+                  void startListening();
+                }
+              });
               audio.addEventListener("pause", unloadAudio);
               audio.addEventListener("canplaythrough", playAudio);
               audio.addEventListener("error", audioError);
@@ -383,6 +390,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
           }
           case "intent-end": {
             setConversationId(event.data.intent_output.conversation_id);
+            setContinueConversation(event.data.intent_output.continue_conversation);
             const plain = event.data.intent_output.response.speech?.plain;
             if (plain?.speech) {
               updateMessage({
@@ -412,7 +420,12 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
             const audio = new Audio(url);
             console.log("[Assist] Playing audio:", url);
             void audio.play();
-            audio.addEventListener("ended", unloadAudio);
+            audio.addEventListener("ended", () => {
+              unloadAudio();
+              if (continueConversation) {
+                void startListening();
+              }
+            });
             audio.addEventListener("pause", unloadAudio);
             audio.addEventListener("canplaythrough", playAudio);
             audio.addEventListener("error", audioError);
