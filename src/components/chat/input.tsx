@@ -13,9 +13,17 @@ import { useMessagesStore } from "~/components/hooks/use-messages";
 
 export function ChatInput() {
   const { messages, addMessage } = useMessagesStore();
-
   const [inputValue, setInputValue] = useState<string>("");
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Get user messages for history navigation
+  const userMessages = useMemo<Array<string>>(() => {
+    return messages
+      .filter((msg) => msg.sender === "user")
+      .map((msg) => msg.content)
+      .reverse();
+  }, [messages]);
 
   function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
@@ -29,6 +37,7 @@ export function ChatInput() {
     });
 
     setInputValue("");
+    setHistoryIndex(-1);
 
     // Focus back on textarea after sending and reset height
     if (textareaRef.current) {
@@ -38,9 +47,30 @@ export function ChatInput() {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    const textarea = e.currentTarget;
+    const isAtStart = textarea.selectionStart === 0 && textarea.selectionEnd === 0;
+    const isAtEnd = textarea.selectionStart === textarea.value.length;
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
+    } else if (e.key === "ArrowUp" && isAtStart && userMessages.length > 0) {
+      e.preventDefault();
+      const nextIndex = Math.min(historyIndex + 1, userMessages.length - 1);
+      setHistoryIndex(nextIndex);
+      const message = userMessages[nextIndex];
+      setInputValue(message ?? "");
+      // Move cursor to end after state update
+      setTimeout(() => {
+        textarea.selectionStart = textarea.value.length;
+        textarea.selectionEnd = textarea.value.length;
+      }, 0);
+    } else if (e.key === "ArrowDown" && isAtEnd) {
+      e.preventDefault();
+      const nextIndex = Math.max(historyIndex - 1, -1);
+      setHistoryIndex(nextIndex);
+      const message = nextIndex === -1 ? "" : userMessages[nextIndex];
+      setInputValue(message ?? "");
     }
   }
 
