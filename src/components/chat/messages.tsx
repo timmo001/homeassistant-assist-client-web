@@ -77,7 +77,7 @@ export function ChatMessages() {
     if (shouldScrollRef.current) {
       scrollToBottom();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   // Handle button click for scrolling
@@ -105,7 +105,7 @@ export function ChatMessages() {
       container.addEventListener("scroll", handleScroll);
       return () => container.removeEventListener("scroll", handleScroll);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -117,7 +117,7 @@ export function ChatMessages() {
         <div className="flex min-h-full flex-col justify-end">
           <div className="space-y-4 p-4">
             <AnimatePresence>
-              {messagesFormatted.map((message) => (
+              {messagesFormatted.map((message, index) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -137,7 +137,9 @@ export function ChatMessages() {
                       messageClasses[message.sender],
                     )}
                   >
-                    <Markdown>{message.content}</Markdown>
+                    <Markdown>
+                      {messages[index]?.content ?? message.content}
+                    </Markdown>
                     {message.actions && (
                       <div className="flex justify-end gap-2">
                         {message.actions.map((action, index) => (
