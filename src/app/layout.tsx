@@ -6,6 +6,7 @@ import { VercelToolbar } from "@vercel/toolbar/next";
 
 import { Toaster } from "~/components/ui/sonner";
 import { ThemeProvider } from "~/components/theme-provider";
+import { HomeAssistantProvider } from "~/components/hooks/use-home-assistant";
 
 export const metadata: Metadata = {
   title: "Home Assistant Assist",
@@ -32,9 +33,11 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="mx-auto flex h-screen w-full max-w-3xl flex-col">
-            {children}
-          </main>
+          <HomeAssistantProvider>
+            <main className="mx-auto flex h-screen w-full max-w-3xl flex-col">
+              {children}
+            </main>
+          </HomeAssistantProvider>
 
           <Toaster />
 
