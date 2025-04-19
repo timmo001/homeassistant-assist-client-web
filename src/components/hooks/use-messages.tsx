@@ -28,7 +28,7 @@ type MessagesStore = {
   messages: Array<Message>;
   clearMessages: () => void;
   addMessage: (message: Message) => void;
-  updateMessage: (id: string, message: Message) => void;
+  updateMessage: (message: Message) => void;
   removeMessageIfExists: (id: string) => void;
 };
 
@@ -61,14 +61,14 @@ export const useMessagesStore = create<MessagesStore>()(
           set({ messages: current });
         }
       },
-      updateMessage: (id: string, message: Message) => {
+      updateMessage: (message: Message) => {
         const current = get().messages;
-        const index = current.findIndex((m: Message) => m.id === id);
+        const index = current.findIndex((m: Message) => m.id === message.id);
         if (index > -1) {
           current[index] = message;
           set({ messages: current });
         } else {
-          console.error(`Message with id ${id} not found`);
+          console.error(`Message with id ${message.id} not found`);
         }
       },
     }),
