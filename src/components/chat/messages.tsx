@@ -77,6 +77,7 @@ export function ChatMessages() {
     if (shouldScrollRef.current) {
       scrollToBottom();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   // Handle button click for scrolling
@@ -104,6 +105,7 @@ export function ChatMessages() {
       container.addEventListener("scroll", handleScroll);
       return () => container.removeEventListener("scroll", handleScroll);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

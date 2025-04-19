@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button";
 import { ChatClear } from "~/components/chat/clear";
 import { ChatControls } from "~/components/chat/controls";
 import { ChatMessages } from "~/components/chat/messages";
-import { ChatDebug } from "~/components/chat/debug";
+// import { ChatDebug } from "~/components/chat/debug";
 
 export async function ChatContainer() {
   return (
@@ -26,7 +26,7 @@ export async function ChatContainer() {
       {/* Chat controls */}
       <ChatControls />
 
-      <ChatDebug />
+      {/* <ChatDebug /> */}
     </>
   );
 }
