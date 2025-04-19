@@ -152,6 +152,11 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
     sttBinaryHandlerId = null;
     audioBuffer = [];
     await audioRecorder.start();
+
+    if (!audioRecorder.sampleRate) {
+      throw new Error("Failed to get sample rate from audio recorder");
+    }
+
     const messageId = `ha-response-message-${Date.now()}`;
     setLastMessageId(messageId);
     addMessage({
@@ -163,13 +168,12 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
 
     if (!currentPipeline) throw new Error("No pipeline selected");
 
-    // To make sure the answer is placed at the right user text, we add it before we process it
     try {
       const unsub = await homeAssistantClient.runAssistPipeline(
         {
           start_stage: "stt",
           end_stage: currentPipeline.tts_engine ? "tts" : "intent",
-          input: { sample_rate: audioRecorder.sampleRate! },
+          input: { sample_rate: audioRecorder.sampleRate },
           pipeline: currentPipeline.id,
           conversation_id: conversationId,
         },
