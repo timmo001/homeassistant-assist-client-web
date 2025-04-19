@@ -51,7 +51,6 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<HassConfig | null>(null);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [lastMessageId, setLastMessageId] = useState<string | null>(null);
 
   const { settings } = useSettingsStore();
   const { addMessage, removeMessageIfExists, updateMessage } =
@@ -61,7 +60,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
 
   const connectedCallback = useCallback(
     (connection: Connection, user: HassUser): void => {
-      console.log("Connected to Home Assistant", connection, user);
+      console.log("[Assist] Connected to Home Assistant", connection, user);
 
       // Remove the ha-auth-required message
       removeMessageIfExists("ha-auth-required");
@@ -79,7 +78,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
 
   const configReceivedCallback = useCallback(
     (config: HassConfig): void => {
-      console.log("Config received from Home Assistant", config);
+      console.log("[Assist] Config received from Home Assistant", config);
       setConfig(config);
 
       // Get pipelines
@@ -90,14 +89,17 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
             pipelines: AssistPipeline[];
             preferred_pipeline: string | null;
           }) => {
-            console.log("Got pipelines:", pipelinesData);
+            console.log("[Assist] Got pipelines:", pipelinesData);
             setPipelines(pipelinesData.pipelines);
             if (!currentPipeline) {
               const preferredPipeline = pipelinesData.pipelines.find(
                 (pipeline) => pipeline.id === pipelinesData.preferred_pipeline,
               );
               if (preferredPipeline) {
-                console.log("Setting preferred pipeline:", preferredPipeline);
+                console.log(
+                  "[Assist] Setting preferred pipeline:",
+                  preferredPipeline,
+                );
                 setCurrentPipeline(preferredPipeline);
                 addMessage({
                   id: `ha-pipeline-change-${Date.now()}`,
@@ -105,7 +107,7 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
                   sender: "system",
                   timestamp: Date.now(),
                 });
-              } else console.error("No preferred pipeline found");
+              } else console.error("[Assist] No preferred pipeline found");
             }
           },
         );
@@ -126,12 +128,12 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
   }, [configReceivedCallback, connectedCallback, settings]);
 
   function playAudio(): void {
-    console.log("Playing audio..");
+    console.log("[Assist] Playing audio..");
     void audio?.play();
   }
 
   function audioError(): void {
-    console.error("Audio error:", audio);
+    console.error("[Assist] Audio error:", audio);
     unloadAudio();
   }
 
@@ -158,7 +160,6 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
     }
 
     const messageId = `ha-response-message-${Date.now()}`;
-    setLastMessageId(messageId);
     addMessage({
       id: messageId,
       content: "...",
@@ -168,6 +169,8 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
 
     if (!currentPipeline) throw new Error("No pipeline selected");
 
+    // Prepare to accumulate streaming response
+    let accumulatedResponse = "";
     try {
       const unsub = await homeAssistantClient.runAssistPipeline(
         {
@@ -178,87 +181,101 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
           conversation_id: conversationId,
         },
         (event) => {
-          if (event.type === "run-start") {
-            sttBinaryHandlerId = event.data.runner_data.stt_binary_handler_id;
-          }
-
-          // When we start STT stage, the WS has a binary handler
-          if (event.type === "stt-start" && audioBuffer) {
-            // Send the buffer over the WS to the STT engine.
-            for (const buffer of audioBuffer) {
-              sendAudioChunk(buffer);
+          switch (event.type) {
+            case "run-start": {
+              sttBinaryHandlerId = event.data.runner_data.stt_binary_handler_id;
+              break;
             }
-            audioBuffer = undefined;
-          }
-
-          // Stop recording if the server is done with STT stage
-          if (event.type === "stt-end") {
-            sttBinaryHandlerId = null;
-            void stopListening();
-            // To make sure the answer is placed at the right user text, we add it before we process it
-            if (lastMessageId) {
-              updateMessage(lastMessageId, {
-                id: lastMessageId,
-                content: event.data.stt_output.text,
-                sender: "server",
-                timestamp: Date.now(),
-              });
-            } else {
-              const messageId = `ha-response-message-${Date.now()}`;
-              setLastMessageId(messageId);
-              addMessage({
+            case "stt-start": {
+              if (audioBuffer) {
+                // Send the buffer over the WS to the STT engine.
+                for (const buffer of audioBuffer) {
+                  sendAudioChunk(buffer);
+                }
+                audioBuffer = undefined;
+              }
+              break;
+            }
+            case "stt-end": {
+              sttBinaryHandlerId = null;
+              void stopListening();
+              updateMessage({
                 id: messageId,
                 content: event.data.stt_output.text,
                 sender: "server",
                 timestamp: Date.now(),
               });
+              break;
             }
-          }
-
-          if (event.type === "intent-end") {
-            setConversationId(event.data.intent_output.conversation_id);
-            const plain = event.data.intent_output.response.speech?.plain;
-            if (plain) {
-              const messageId = `ha-response-message-${Date.now()}`;
-              setLastMessageId(messageId);
+            case "intent-progress": {
+              console.log("[Assist] intent-progress event:", event);
+              console.log(
+                "[Assist] chat_log_delta:",
+                event.data.chat_log_delta,
+              );
+              // Append new chunk if present
+              if (
+                event.data.chat_log_delta &&
+                "content" in event.data.chat_log_delta &&
+                event.data.chat_log_delta.content
+              ) {
+                accumulatedResponse += event.data.chat_log_delta.content;
+                console.log(
+                  "[Assist] accumulatedResponse:",
+                  accumulatedResponse,
+                );
+                updateMessage({
+                  id: messageId,
+                  content: accumulatedResponse,
+                  sender: "server",
+                  timestamp: Date.now(),
+                });
+              }
+              break;
+            }
+            case "intent-end": {
+              setConversationId(event.data.intent_output.conversation_id);
+              const plain = event.data.intent_output.response.speech?.plain;
+              if (plain?.speech) {
+                updateMessage({
+                  id: messageId,
+                  content: plain.speech,
+                  sender: "server",
+                  timestamp: Date.now(),
+                });
+              }
+              break;
+            }
+            case "tts-end": {
+              const url = `${generateHomeAssistantURLFromSettings(
+                settingsToHomeAssistantSettings(settings),
+              )}${event.data.tts_output.url}`;
+              audio = new Audio(url);
+              console.log("Playing audio:", url);
+              void audio.play();
+              audio.addEventListener("ended", unloadAudio);
+              audio.addEventListener("pause", unloadAudio);
+              audio.addEventListener("canplaythrough", playAudio);
+              audio.addEventListener("error", audioError);
+              break;
+            }
+            case "run-end": {
+              sttBinaryHandlerId = null;
+              if (unsub) void unsub();
+              break;
+            }
+            case "error": {
+              sttBinaryHandlerId = null;
               addMessage({
-                id: messageId,
-                content: plain.speech,
+                id: `ha-response-error-${Date.now()}`,
+                content: event.data.message,
                 sender: "server",
                 timestamp: Date.now(),
               });
+              void stopListening();
+              if (unsub) void unsub();
+              break;
             }
-          }
-
-          if (event.type === "tts-end") {
-            const url = `${generateHomeAssistantURLFromSettings(
-              settingsToHomeAssistantSettings(settings),
-            )}${event.data.tts_output.url}`;
-            audio = new Audio(url);
-            console.log("Playing audio:", url);
-            void audio.play();
-            audio.addEventListener("ended", unloadAudio);
-            audio.addEventListener("pause", unloadAudio);
-            audio.addEventListener("canplaythrough", playAudio);
-            audio.addEventListener("error", audioError);
-          }
-
-          if (event.type === "run-end") {
-            sttBinaryHandlerId = null;
-            if (unsub) void unsub();
-          }
-
-          if (event.type === "error") {
-            sttBinaryHandlerId = null;
-            addMessage({
-              id: `ha-response-error-${Date.now()}`,
-              content: event.data.message,
-              sender: "server",
-              timestamp: Date.now(),
-            });
-
-            void stopListening();
-            if (unsub) void unsub();
           }
         },
       );
@@ -320,6 +337,17 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
   async function processUserMessage(message: string): Promise<void> {
     if (!currentPipeline) throw new Error("No pipeline selected");
 
+    // Create initial message ID that will be updated
+    const messageId = `ha-response-message-${Date.now()}`;
+    addMessage({
+      id: messageId,
+      content: "...",
+      sender: "server",
+      timestamp: Date.now(),
+    });
+
+    // Prepare to accumulate streaming response
+    let accumulatedResponse = "";
     // Call pipeline
     const unsub = await homeAssistantClient.runAssistPipeline(
       {
@@ -330,43 +358,66 @@ export function HomeAssistantProvider({ children }: { children: ReactNode }) {
         conversation_id: conversationId,
       },
       (event: PipelineRunEvent) => {
-        console.log("Got pipeline event:", event);
-        if (event.type === "intent-end") {
-          setConversationId(event.data.intent_output.conversation_id);
-          const plain = event.data.intent_output.response.speech?.plain;
-          if (plain) {
-            const messageId = `ha-response-message-${Date.now()}`;
-            setLastMessageId(messageId);
+        console.log("[Assist] Got pipeline event:", event);
+
+        switch (event.type) {
+          case "intent-progress": {
+            console.log("[Assist] intent-progress event:", event);
+            console.log("[Assist] chat_log_delta:", event.data.chat_log_delta);
+            // Append new chunk if present
+            if (
+              event.data.chat_log_delta &&
+              "content" in event.data.chat_log_delta &&
+              event.data.chat_log_delta.content
+            ) {
+              accumulatedResponse += event.data.chat_log_delta.content;
+              console.log("[Assist] accumulatedResponse:", accumulatedResponse);
+              updateMessage({
+                id: messageId,
+                content: accumulatedResponse,
+                sender: "server",
+                timestamp: Date.now(),
+              });
+            }
+            break;
+          }
+          case "intent-end": {
+            setConversationId(event.data.intent_output.conversation_id);
+            const plain = event.data.intent_output.response.speech?.plain;
+            if (plain?.speech) {
+              updateMessage({
+                id: messageId,
+                content: plain.speech,
+                sender: "server",
+                timestamp: Date.now(),
+              });
+            }
+            if (unsub) void unsub();
+            break;
+          }
+          case "error": {
             addMessage({
-              id: messageId,
-              content: plain.speech,
+              id: `ha-response-error-${Date.now()}`,
+              content: event.data.message,
               sender: "server",
               timestamp: Date.now(),
             });
+            if (unsub) void unsub();
+            break;
           }
-          if (unsub) void unsub();
-        }
-        if (event.type === "error") {
-          addMessage({
-            id: `ha-response-error-${Date.now()}`,
-            content: event.data.message,
-            sender: "server",
-            timestamp: Date.now(),
-          });
-          if (unsub) void unsub();
-        }
-
-        if (event.type === "tts-end") {
-          const url = `${generateHomeAssistantURLFromSettings(
-            settingsToHomeAssistantSettings(settings),
-          )}${event.data.tts_output.url}`;
-          const audio = new Audio(url);
-          console.log("Playing audio:", url);
-          void audio.play();
-          audio.addEventListener("ended", unloadAudio);
-          audio.addEventListener("pause", unloadAudio);
-          audio.addEventListener("canplaythrough", playAudio);
-          audio.addEventListener("error", audioError);
+          case "tts-end": {
+            const url = `${generateHomeAssistantURLFromSettings(
+              settingsToHomeAssistantSettings(settings),
+            )}${event.data.tts_output.url}`;
+            const audio = new Audio(url);
+            console.log("[Assist] Playing audio:", url);
+            void audio.play();
+            audio.addEventListener("ended", unloadAudio);
+            audio.addEventListener("pause", unloadAudio);
+            audio.addEventListener("canplaythrough", playAudio);
+            audio.addEventListener("error", audioError);
+            break;
+          }
         }
       },
     );
